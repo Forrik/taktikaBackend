@@ -72,7 +72,7 @@ LOGGING = {
 ROOT_URLCONF = 'backend.urls'
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8080',
+    'http://185.228.234.42:8080',
 ]
 
 
