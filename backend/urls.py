@@ -2,6 +2,8 @@
 from django.contrib import admin
 from django.urls import path
 from .views import RegisterView, LoginView, ProfileView, GymListView, TrainingListView, SubscriptionListView, TrainingFeedbackListView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,3 +16,6 @@ urlpatterns = [
          name='subscription-list'),
     path('feedback/', TrainingFeedbackListView.as_view(), name='feedback-list'),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)

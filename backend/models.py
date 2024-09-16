@@ -27,6 +27,9 @@ class Gym(models.Model):
     photo = models.ImageField(upload_to='gym_photos/', blank=True)
     level = models.IntegerField()
 
+    def __str__(self):
+        return self.name
+
 
 class Training(models.Model):
     gym = models.ForeignKey(Gym, on_delete=models.CASCADE)
