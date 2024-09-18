@@ -14,8 +14,8 @@ class Profile(models.Model):
     occupation = models.CharField(max_length=100, blank=True)
     preferred_area = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100, blank=True)
-    gender = models.CharField(max_length=10, choices=[(
-        'M', 'Male'), ('F', 'Female')], blank=True)
+    gender = models.CharField(max_length=10, choices=[
+                              ('M', 'Male'), ('F', 'Female')], blank=True)
 
 
 class Gym(models.Model):
@@ -31,17 +31,30 @@ class Gym(models.Model):
         return self.name
 
 
+class Trainer(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name='trainer_profile')
+    experience_years = models.IntegerField(default=0)
+    bio = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - Trainer"
+
+
 class Training(models.Model):
     gym = models.ForeignKey(Gym, on_delete=models.CASCADE)
     trainer = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='trainer_trainings')
+        Trainer, on_delete=models.CASCADE, null=False, related_name='trainings')
     date = models.DateTimeField()
     level = models.IntegerField()
     max_participants = models.IntegerField()
     current_participants = models.IntegerField(default=0)
     intensity = models.IntegerField(null=True, blank=True)
     participants = models.ManyToManyField(
-        User, related_name='participant_trainings')
+        User, related_name='trainings', blank=True)
+
+    def __str__(self):
+        return f"Training at {self.gym.name} on {self.date}"
 
 
 class Subscription(models.Model):

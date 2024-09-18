@@ -1,9 +1,10 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import Profile, Gym, Training, Subscription, TrainingFeedback, Trainer
+from .serializers import UserSerializer, LoginSerializer, GymSerializer, TrainingSerializer, SubscriptionSerializer, TrainingFeedbackSerializer, TrainerSerializer
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from .serializers import UserSerializer, LoginSerializer, GymSerializer, TrainingSerializer, SubscriptionSerializer, TrainingFeedbackSerializer
-from .models import Gym, Training, Subscription, TrainingFeedback, Profile
 
 
 class RegisterView(generics.CreateAPIView):
@@ -68,7 +69,19 @@ class GymListView(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
+class GymDetailView(generics.RetrieveAPIView):
+    queryset = Gym.objects.all()
+    serializer_class = GymSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+
 class TrainingListView(generics.ListCreateAPIView):
+    queryset = Training.objects.all()
+    serializer_class = TrainingSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+
+class TrainingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Training.objects.all()
     serializer_class = TrainingSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -88,3 +101,56 @@ class TrainingFeedbackListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return TrainingFeedback.objects.filter(user=self.request.user)
+
+
+class TrainerListView(generics.ListCreateAPIView):
+    queryset = Trainer.objects.all()
+    serializer_class = TrainerSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+
+class TrainerDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Trainer.objects.all()
+    serializer_class = TrainerSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+
+class TrainingEnrollView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, pk):
+        try:
+            training = Training.objects.get(pk=pk)
+        except Training.DoesNotExist:
+            return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user in training.participants.all():
+            return Response({'error': 'You are already enrolled in this training'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if training.current_participants >= training.max_participants:
+            return Response({'error': 'This training is full'}, status=status.HTTP_400_BAD_REQUEST)
+
+        training.participants.add(request.user)
+        training.current_participants += 1
+        training.save()
+
+        return Response({'success': 'You have been enrolled in the training'}, status=status.HTTP_200_OK)
+
+
+class TrainingUnenrollView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, pk):
+        try:
+            training = Training.objects.get(pk=pk)
+        except Training.DoesNotExist:
+            return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user not in training.participants.all():
+            return Response({'error': 'You are not enrolled in this training'}, status=status.HTTP_400_BAD_REQUEST)
+
+        training.participants.remove(request.user)
+        training.current_participants -= 1
+        training.save()
+
+        return Response({'success': 'You have been unenrolled from the training'}, status=status.HTTP_200_OK)

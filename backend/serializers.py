@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
-from .models import Profile, Gym, Training, Subscription, TrainingFeedback
+from .models import Profile, Gym, Training, Subscription, TrainingFeedback, Trainer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -83,7 +83,19 @@ class GymSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TrainerSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Trainer
+        fields = ['id', 'user', 'experience_years', 'bio']
+
+
 class TrainingSerializer(serializers.ModelSerializer):
+    trainer = TrainerSerializer(read_only=True)
+    gym = GymSerializer(read_only=True)
+    participants = UserSerializer(many=True, read_only=True)
+
     class Meta:
         model = Training
         fields = '__all__'
