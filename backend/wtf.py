@@ -1,15 +1,15 @@
-from django.contrib import admin
-from rest_framework import serializers
-from django.db import models
 from django.conf.urls.static import static
 from django.conf import settings
 from .views import (
-    RegisterView, LoginView, ProfileView, GymListView, TrainingListView,
+    RegisterView, LoginView, ProfileView, GymListView, GymDetailView,  TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
     TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView
 )
 from django.urls import path
+from django.contrib import admin
 from django.contrib.auth import authenticate
+from rest_framework import serializers
+from django.db import models
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -76,6 +76,12 @@ class ProfileView(generics.RetrieveAPIView):
 
 
 class GymListView(generics.ListCreateAPIView):
+    queryset = Gym.objects.all()
+    serializer_class = GymSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+
+class GymDetailView(generics.RetrieveAPIView):
     queryset = Gym.objects.all()
     serializer_class = GymSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -348,6 +354,7 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view(), name='login'),
     path('profile/<int:user_id>/', ProfileView.as_view(), name='profile'),
     path('gyms/', GymListView.as_view(), name='gym-list'),
+    path('gyms/<int:pk>/', GymDetailView.as_view(), name='gym-detail'),
     path('trainings/', TrainingListView.as_view(), name='training-list'),
     path('trainings/<int:pk>/', TrainingDetailView.as_view(), name='training-detail'),
     path('trainings/<int:pk>/enroll/',
