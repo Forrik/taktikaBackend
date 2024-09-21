@@ -55,6 +55,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
+AUTH_USER_MODEL = 'backend.CustomUser'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -164,6 +166,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
 }

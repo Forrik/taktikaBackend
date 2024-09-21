@@ -1,13 +1,16 @@
 from django.contrib import admin
 from django.urls import path
 from .views import (
-    RegisterView, LoginView, ProfileView, GymListView, GymDetailView,  TrainingListView,
+    RegisterView, LoginView, ProfileView, GymListView, GymDetailView, TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
     TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView
 )
 from django.conf import settings
 from django.conf.urls.static import static
-
+from .permissions import IsAdminUser, IsTrainerUser, IsRegularUser
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.permissions import AllowAny
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/register/', RegisterView.as_view(), name='register'),
@@ -26,6 +29,7 @@ urlpatterns = [
     path('feedback/', TrainingFeedbackListView.as_view(), name='feedback-list'),
     path('trainers/', TrainerListView.as_view(), name='trainer-list'),
     path('trainers/<int:pk>/', TrainerDetailView.as_view(), name='trainer-detail'),
+
 ]
 
 if settings.DEBUG:
