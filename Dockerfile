@@ -2,7 +2,7 @@
 FROM python:3.9
 
 # Устанавливаем рабочую директорию
-WORKDIR /app
+WORKDIR /backend
 
 # Копируем requirements.txt в рабочую директорию
 COPY requirements.txt .
