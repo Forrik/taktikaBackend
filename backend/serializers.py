@@ -136,7 +136,8 @@ class TrainingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Training
         fields = ['id', 'date', 'level', 'max_participants',
-                  'current_participants', 'trainer', 'gym', 'trainer_id', 'gym_id']
+                  'current_participants', 'trainer', 'gym', 'trainer_id', 'gym_id',
+                  'is_recurring', 'recurrence_end_date']
 
     def create(self, validated_data):
         validated_data.pop('id', None)  # Удаляем id, если он есть

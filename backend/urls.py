@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     RegisterView, LoginView, ProfileView, GymListView, GymDetailView, TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
-    TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView
+    TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView, ManageRecurringTrainingsView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -29,6 +29,8 @@ urlpatterns = [
     path('feedback/', TrainingFeedbackListView.as_view(), name='feedback-list'),
     path('trainers/', TrainerListView.as_view(), name='trainer-list'),
     path('trainers/<int:pk>/', TrainerDetailView.as_view(), name='trainer-detail'),
+    path('manage-recurring-trainings/', ManageRecurringTrainingsView.as_view(),
+         name='manage-recurring-trainings'),
 
 ]
 

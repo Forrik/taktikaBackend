@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.base_user import BaseUserManager
+from django.utils import timezone
 
 
 class CustomUserManager(BaseUserManager):
@@ -124,17 +125,36 @@ class Training(models.Model):
     intensity = models.IntegerField(null=True, blank=True)
     participants = models.ManyToManyField(
         CustomUser, related_name='trainings', blank=True)
+    is_recurring = models.BooleanField(default=False)
+    recurrence_end_date = models.DateField(null=True, blank=True)
+    parent_training = models.ForeignKey(
+        'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='recurring_trainings')
 
     def __str__(self):
         return f"Training at {self.gym.name} on {self.date}"
 
     def save(self, *args, **kwargs):
-        if not self.pk:  # Если это новый объект
-            self.current_participants = 0  # Устанавливаем начальное значение
-        super().save(*args, **kwargs)  # Сохраняем объект один раз
+        if not self.pk:
+            self.current_participants = 0
+        super().save(*args, **kwargs)
         self.current_participants = self.participants.count()
-        if self.pk:  # Если объект уже существует, обновляем его
+        if self.pk:
             super().save(update_fields=['current_participants'])
+
+    def create_next_recurring(self):
+        if self.is_recurring and self.recurrence_end_date and self.date.date() + timezone.timedelta(days=7) <= self.recurrence_end_date:
+            next_date = self.date + timezone.timedelta(days=7)
+            Training.objects.create(
+                gym=self.gym,
+                trainer=self.trainer,
+                date=next_date,
+                level=self.level,
+                max_participants=self.max_participants,
+                intensity=self.intensity,
+                is_recurring=True,
+                recurrence_end_date=self.recurrence_end_date,
+                parent_training=self
+            )
 
 
 class Subscription(models.Model):
