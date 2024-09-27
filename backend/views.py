@@ -44,7 +44,11 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self):
-        return self.request.user
+        user_id = self.kwargs.get('user_id')
+        try:
+            return CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            raise Http404("User does not exist")
 
 
 class GymListView(generics.ListCreateAPIView):

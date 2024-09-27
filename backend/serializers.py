@@ -5,6 +5,10 @@ from django.contrib.auth import authenticate
 from .models import CustomUser, Profile, Gym, Training, Subscription, TrainingFeedback, Trainer
 
 
+from rest_framework import serializers
+from .models import CustomUser, Profile, Gym, Training, Subscription, TrainingFeedback, Trainer
+
+
 class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
@@ -13,21 +17,30 @@ class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     phone = serializers.CharField(
         max_length=15, required=False, allow_blank=True)
-    level = serializers.IntegerField(default=1)
+    birth_date = serializers.DateField(required=False, allow_null=True)
     city = serializers.CharField(
         max_length=100, required=False, allow_blank=True)
-    gender = serializers.ChoiceField(
-        choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')], required=False, allow_blank=True
-    )
+    gender = serializers.ChoiceField(choices=[(
+        'M', 'Male'), ('F', 'Female'), ('O', 'Other')], required=False, allow_blank=True)
+    passport_data = serializers.CharField(
+        max_length=100, required=False, allow_blank=True)
+    experience_years = serializers.IntegerField(
+        required=False, allow_null=True)
+    bio = serializers.CharField(required=False, allow_blank=True)
+    sports_title = serializers.CharField(
+        max_length=100, required=False, allow_blank=True)
+    photo = serializers.ImageField(required=False, allow_null=True)
     password = serializers.CharField(write_only=True, required=False)
     role = serializers.ChoiceField(choices=CustomUser.ROLES, default='user')
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'first_name', 'last_name', 'middle_name', 'email',
-                  'phone', 'level', 'city', 'gender', 'password', 'role')
+        fields = ('id', 'first_name', 'last_name', 'middle_name', 'email', 'phone', 'birth_date', 'city',
+                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'password', 'role')
 
     def validate_email(self, value):
+        if self.instance and self.instance.email == value:
+            return value
         if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("Такая почта уже используется.")
         return value
@@ -39,10 +52,6 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        profile_fields = ['phone', 'level', 'city', 'gender']
-        profile_data = {field: validated_data.pop(
-            field, '') for field in profile_fields}
-
         email = validated_data.pop('email')
         password = validated_data.pop('password', None)
         role = validated_data.pop('role', 'user')
@@ -55,23 +64,24 @@ class UserSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
-        Profile.objects.update_or_create(user=user, defaults=profile_data)
-
         if role == 'trainer':
             Trainer.objects.get_or_create(user=user)
 
         return user
 
+    def update(self, instance, validated_data):
+        email = validated_data.get('email', instance.email)
+        if email != instance.email and CustomUser.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                {"email": "Такая почта уже используется."})
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        profile = instance.profile
-        profile_fields = ['phone', 'level', 'city', 'gender']
-        for field in profile_fields:
-            representation[field] = getattr(profile, field, '')
-
-        # Handle middle_name separately
-        representation['middle_name'] = getattr(instance, 'middle_name', '')
-
         return representation
 
 
@@ -126,8 +136,7 @@ class TrainingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Training
         fields = ['id', 'date', 'level', 'max_participants',
-                  'current_participants', 'trainer', 'gym',
-                  'trainer_id', 'gym_id']
+                  'current_participants', 'trainer', 'gym', 'trainer_id', 'gym_id']
 
     def create(self, validated_data):
         validated_data.pop('id', None)  # Удаляем id, если он есть

@@ -35,6 +35,17 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLES, default='user')
     middle_name = models.CharField(max_length=150, blank=True)
+    phone = models.CharField(max_length=15, blank=True)  # Добавлено
+    birth_date = models.DateField(null=True, blank=True)  # Добавлено
+    city = models.CharField(max_length=100, blank=True)  # Добавлено
+    gender = models.CharField(max_length=10, choices=[(
+        'M', 'Male'), ('F', 'Female')], blank=True)  # Добавлено
+    passport_data = models.CharField(max_length=100, blank=True)  # Добавлено
+    experience_years = models.IntegerField(default=0)  # Добавлено
+    bio = models.TextField(blank=True)  # Добавлено
+    sports_title = models.CharField(max_length=100, blank=True)  # Добавлено
+    photo = models.ImageField(
+        upload_to='user_photos/', blank=True)  # Добавлено
 
     objects = CustomUserManager()
 
@@ -64,15 +75,11 @@ class CustomUser(AbstractUser):
 
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=15, blank=True)
     level = models.IntegerField(default=1)
     total_trainings = models.IntegerField(default=0)
     first_training_date = models.DateField(null=True, blank=True)
     occupation = models.CharField(max_length=100, blank=True)
     preferred_area = models.CharField(max_length=100, blank=True)
-    city = models.CharField(max_length=100, blank=True)
-    gender = models.CharField(max_length=10, choices=[
-                              ('M', 'Male'), ('F', 'Female')], blank=True)
 
     def __str__(self):
         return f"Profile for {self.user.email}"
@@ -81,13 +88,6 @@ class Profile(models.Model):
         super().save(*args, **kwargs)
         if self.user.role == 'trainer':
             Trainer.objects.get_or_create(user=self.user)
-
-
-@receiver(post_save, sender=CustomUser)
-def create_or_update_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-    instance.profile.save()
 
 
 class Gym(models.Model):

@@ -11,13 +11,13 @@ class ProfileInline(admin.StackedInline):
 
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
-    list_display = ('email', 'first_name', 'middle_name', 'last_name',
-                    'role', 'is_staff', 'is_active')
+    list_display = ('email', 'first_name', 'middle_name', 'last_name', 'role', 'is_staff', 'is_active', 'phone',
+                    'birth_date', 'city', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo')
     list_filter = ('is_staff', 'is_active', 'role')
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name',
-         'middle_name', 'last_name', 'role')}),
+        ('Personal info', {'fields': ('first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date',
+         'city', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo')}),
         ('Permissions', {'fields': ('is_active', 'is_staff',
          'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
@@ -25,7 +25,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'first_name', 'middle_name', 'last_name', 'role', 'is_staff', 'is_active')}
+            'fields': ('email', 'password1', 'password2', 'first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date', 'city', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'is_staff', 'is_active')}
          ),
     )
     search_fields = ('email', 'first_name', 'middle_name', 'last_name')
