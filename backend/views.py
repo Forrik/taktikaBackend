@@ -8,6 +8,44 @@ from django.contrib.auth import authenticate
 from .permissions import IsAdminUser, IsTrainerUser, IsRegularUser
 from rest_framework.permissions import AllowAny
 from django.utils import timezone
+from .payment import create_split_payment
+from django.db import transaction
+import logging
+from decimal import Decimal
+import requests
+from django.http import JsonResponse
+from django.shortcuts import redirect
+logger = logging.getLogger(__name__)
+
+
+def amocrm_callback(request):
+    # Получаем код авторизации из параметров запроса
+    auth_code = request.GET.get('code')
+
+    if not auth_code:
+        return JsonResponse({"error": "Authorization code not provided"}, status=400)
+
+    # Параметры для получения токенов
+    url = "https://ilya33533.amocrm.ru/oauth2/access_token"
+    data = {
+        "client_id": "11593038",
+        "client_secret": "YOUR_CLIENT_SECRET",
+        "grant_type": "authorization_code",
+        "code": auth_code,
+        "redirect_uri": "http://45.8.229.240:8000/oauth/callback/"
+    }
+
+    # Запрос токенов
+    response = requests.post(url, json=data)
+
+    # Проверка и обработка ответа
+    if response.status_code == 200:
+        tokens = response.json()
+        # Сохраните токены для дальнейшего использования
+        # Например, в сессии или базе данных
+        return JsonResponse(tokens)
+    else:
+        return JsonResponse({"error": "Failed to get tokens", "details": response.json()}, status=response.status_code)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -162,6 +200,61 @@ class SubscriptionListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Subscription.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        gym_id = self.request.data.get('gym')
+        trainer_id = self.request.data.get('trainer')
+        gym = Gym.objects.get(id=gym_id)
+        trainer = Trainer.objects.get(id=trainer_id)
+        serializer.save(user=self.request.user, gym=gym, trainer=trainer)
+
+
+class SubscriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_object(self):
+        obj = get_object_or_404(
+            Subscription, id=self.kwargs['pk'], user=self.request.user)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class CreateSubscriptionView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = SubscriptionSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                subscription = serializer.save(user=request.user)
+                gym = subscription.gym
+                trainer = subscription.trainer
+                amount = subscription.price
+                recipient_amount = amount * \
+                    Decimal('0.7')  # 70% на р/с тренера
+
+                # Проверка наличия тренера и зала
+                if not gym or not trainer:
+                    return Response({'error': 'Gym or trainer not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Создание сплитованного платежа
+                payment = create_split_payment(
+                    amount, trainer.user.account_id, recipient_amount)
+
+                # Сохранение данных платежа в базе данных
+                subscription.payment_id = payment.id
+                subscription.save()
+
+                return Response({'payment_url': payment.confirmation.confirmation_url}, status=status.HTTP_201_CREATED)
+
+            except Exception as e:
+                logger.error(f"Error creating subscription: {e}")
+                return Response({'error': 'Failed to create subscription'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TrainingFeedbackListView(generics.ListCreateAPIView):

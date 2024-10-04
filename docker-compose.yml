@@ -4,9 +4,11 @@ services:
   db:
     image: postgres:13
     environment:
-      POSTGRES_DB: yourdbname
-      POSTGRES_USER: yourdbuser
-      POSTGRES_PASSWORD: yourdbpassword
+      POSTGRES_DB: taktika_db
+      POSTGRES_USER: ${DB_USER:-taktika_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-taktika_password123}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
@@ -14,9 +16,15 @@ services:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
+      - .:/code
     ports:
       - "8000:8000"
+    environment:
+      DB_NAME: taktika_db
+      DB_USER: ${DB_USER:-taktika_user}
+      DB_PASSWORD: ${DB_PASSWORD:-taktika_password123}
+      DB_HOST: db
+      DB_PORT: 5432
     depends_on:
       - db
 

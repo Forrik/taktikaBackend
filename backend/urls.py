@@ -3,14 +3,13 @@ from django.urls import path
 from .views import (
     RegisterView, LoginView, ProfileView, GymListView, GymDetailView, TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
-    TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView, ManageRecurringTrainingsView
+    TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView, ManageRecurringTrainingsView,
+    SubscriptionDetailView, CreateSubscriptionView  # Добавлены новые представления
 )
 from django.conf import settings
 from django.conf.urls.static import static
-from .permissions import IsAdminUser, IsTrainerUser, IsRegularUser
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.permissions import AllowAny
+from . import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/register/', RegisterView.as_view(), name='register'),
@@ -26,13 +25,18 @@ urlpatterns = [
          TrainingUnenrollView.as_view(), name='training-unenroll'),
     path('subscriptions/', SubscriptionListView.as_view(),
          name='subscription-list'),
+    path('subscriptions/create/', CreateSubscriptionView.as_view(),
+         name='subscription-create'),  # Добавлен маршрут для создания абонемента
+    path('subscriptions/<int:pk>/', SubscriptionDetailView.as_view(),
+         name='subscription-detail'),  # Добавлен маршрут для деталей абонемента
     path('feedback/', TrainingFeedbackListView.as_view(), name='feedback-list'),
     path('trainers/', TrainerListView.as_view(), name='trainer-list'),
     path('trainers/<int:pk>/', TrainerDetailView.as_view(), name='trainer-detail'),
     path('manage-recurring-trainings/', ManageRecurringTrainingsView.as_view(),
          name='manage-recurring-trainings'),
-
+    path('oauth/callback/', views.amocrm_callback, name='amocrm_callback'),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,

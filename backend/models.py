@@ -47,6 +47,8 @@ class CustomUser(AbstractUser):
     sports_title = models.CharField(max_length=100, blank=True)  # Добавлено
     photo = models.ImageField(
         upload_to='user_photos/', blank=True)  # Добавлено
+    account_id = models.CharField(
+        max_length=100, blank=True)  # Добавленный атрибут
 
     objects = CustomUserManager()
 
@@ -159,14 +161,18 @@ class Training(models.Model):
 
 class Subscription(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    gym = models.ForeignKey(
+        Gym, on_delete=models.CASCADE, null=True, blank=True)
     type = models.CharField(max_length=20)
     start_date = models.DateField()
     end_date = models.DateField()
     trainings_left = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    trainer = models.ForeignKey(
+        Trainer, on_delete=models.CASCADE, null=True, blank=True)  # Оплата через тренера
 
     def __str__(self):
-        return f"Subscription for {self.user.email}"
+        return f"Subscription for {self.user.email} at {self.gym.name}"
 
 
 class TrainingFeedback(models.Model):

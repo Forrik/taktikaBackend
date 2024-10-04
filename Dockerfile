@@ -1,20 +1,23 @@
-# Используем официальный образ Python
 FROM python:3.9
 
-# Устанавливаем рабочую директорию
+# Установка зависимостей
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка рабочей директории
 WORKDIR /backend
 
-# Копируем requirements.txt в рабочую директорию
+# Копирование файлов проекта
 COPY requirements.txt .
 
-# Устанавливаем зависимости
+# Установка зависимостей Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем остальные файлы проекта
+# Копирование всего проекта
 COPY . .
 
-# Открываем порт 8000
 EXPOSE 8000
 
-# Запускаем сервер Django
+# Команда для запуска приложения
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
