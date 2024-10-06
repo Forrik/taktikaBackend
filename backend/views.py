@@ -334,7 +334,7 @@ class TrainingUnenrollView(APIView):
 
         # Проверка времени
         now = timezone.now()
-        deadline = training.date - timezone.timedelta(hours=8)
+        deadline = training.unenroll_deadline
 
         logger.info(f"Unenroll attempt for training {pk}:")
         logger.info(f"Current time (now): {now}")
@@ -346,7 +346,7 @@ class TrainingUnenrollView(APIView):
             logger.warning(
                 f"Unenroll denied: current time {now} is past the deadline {deadline}")
             return Response(
-                {'error': 'Вы не можете отменить запись на тренировку менее чем за 8 часов до её начала'},
+                {'error': 'Вы не можете отменить запись на тренировку после установленного дедлайна'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

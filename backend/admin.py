@@ -61,10 +61,17 @@ class GymAdmin(admin.ModelAdmin):
 
 class TrainingAdmin(admin.ModelAdmin):
     list_display = ('gym', 'trainer', 'date', 'level',
-                    'max_participants', 'current_participants')
-    list_filter = ('gym', 'trainer', 'level', 'date')
+                    'max_participants', 'current_participants', 'unenroll_deadline')
+    list_filter = ('gym', 'trainer', 'level', 'date',
+                   'unenroll_deadline')
     search_fields = ('gym__name', 'trainer__user__email')
     date_hierarchy = 'date'
+
+    fieldsets = (
+        (None, {'fields': ('gym', 'trainer', 'date', 'level', 'max_participants',
+         'current_participants', 'unenroll_deadline')}),
+        # ... другие поля ...
+    )
 
 
 class SubscriptionAdmin(admin.ModelAdmin):

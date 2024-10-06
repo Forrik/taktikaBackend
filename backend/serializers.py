@@ -133,12 +133,13 @@ class TrainingSerializer(serializers.ModelSerializer):
         source='gym',
         write_only=True
     )
+    unenroll_deadline = serializers.DateTimeField(required=False)  # Новое поле
 
     class Meta:
         model = Training
         fields = ['id', 'date', 'level', 'max_participants',
                   'current_participants', 'trainer', 'gym', 'trainer_id', 'gym_id',
-                  'is_recurring', 'recurrence_end_date']
+                  'is_recurring', 'recurrence_end_date', 'unenroll_deadline']  # Добавьте unenroll_deadline
 
     def create(self, validated_data):
         validated_data.pop('id', None)  # Удаляем id, если он есть

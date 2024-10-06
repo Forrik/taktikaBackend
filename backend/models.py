@@ -123,6 +123,7 @@ class Training(models.Model):
     level = models.IntegerField()
     max_participants = models.IntegerField()
     current_participants = models.IntegerField(default=0)
+    unenroll_deadline = models.DateTimeField(null=True, blank=True)
     intensity = models.IntegerField(null=True, blank=True)
     participants = models.ManyToManyField(
         CustomUser, related_name='trainings', blank=True)
