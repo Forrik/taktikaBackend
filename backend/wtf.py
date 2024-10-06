@@ -26,7 +26,7 @@ class Profile(models.Model):
     first_name = models.CharField(max_length=100, blank=True)
     middle_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
-    phone = models.CharField(max_length=15, blank=True)
+    phone = models.CharField(max_length=30, blank=True)
     level = models.IntegerField(default=1)
     total_trainings = models.IntegerField(default=0)
     first_training_date = models.DateField(null=True, blank=True)
@@ -98,7 +98,7 @@ class UserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=100)
     middle_name = serializers.CharField(max_length=100, required=False)
     email = serializers.EmailField(required=True)
-    phone = serializers.CharField(max_length=15, required=False)
+    phone = serializers.CharField(max_length=30, required=False)
     level = serializers.IntegerField(default=1)
     city = serializers.CharField(max_length=100, required=False)
     gender = serializers.ChoiceField(

@@ -12,12 +12,13 @@ class ProfileInline(admin.StackedInline):
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
     list_display = ('email', 'first_name', 'middle_name', 'last_name', 'role', 'is_staff', 'is_active', 'phone',
-                    'birth_date', 'city', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo')
-    list_filter = ('is_staff', 'is_active', 'role')
+                    'birth_date', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'level')
+    list_filter = ('is_staff', 'is_active', 'role',
+                   'level')
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date',
-         'city', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo')}),
+         'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'level')}),
         ('Permissions', {'fields': ('is_active', 'is_staff',
          'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
@@ -25,7 +26,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date', 'city', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'is_staff', 'is_active')}
+            'fields': ('email', 'password1', 'password2', 'first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'is_staff', 'is_active', 'level')}
          ),
     )
     search_fields = ('email', 'first_name', 'middle_name', 'last_name')
@@ -53,8 +54,8 @@ class CustomUserAdmin(UserAdmin):
 
 
 class GymAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'metro_station', 'district', 'level')
-    list_filter = ('district', 'level')
+    list_display = ('name', 'address', 'metro_station', 'district')
+    list_filter = ('district',)
     search_fields = ('name', 'address', 'metro_station')
 
 

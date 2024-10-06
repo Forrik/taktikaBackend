@@ -36,9 +36,8 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLES, default='user')
     middle_name = models.CharField(max_length=150, blank=True)
-    phone = models.CharField(max_length=15, blank=True)  # Добавлено
+    phone = models.CharField(max_length=30, blank=True)  # Добавлено
     birth_date = models.DateField(null=True, blank=True)  # Добавлено
-    city = models.CharField(max_length=100, blank=True)  # Добавлено
     gender = models.CharField(max_length=10, choices=[(
         'M', 'Male'), ('F', 'Female')], blank=True)  # Добавлено
     passport_data = models.CharField(max_length=100, blank=True)  # Добавлено
@@ -49,6 +48,7 @@ class CustomUser(AbstractUser):
         upload_to='user_photos/', blank=True)  # Добавлено
     account_id = models.CharField(
         max_length=100, blank=True)  # Добавленный атрибут
+    level = models.IntegerField(default=1)  # Добавленное поле
 
     objects = CustomUserManager()
 
@@ -100,7 +100,6 @@ class Gym(models.Model):
     district = models.CharField(max_length=100)
     description = models.TextField()
     photo = models.ImageField(upload_to='gym_photos/', blank=True)
-    level = models.IntegerField()
 
     def __str__(self):
         return self.name

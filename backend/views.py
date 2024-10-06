@@ -298,19 +298,23 @@ class TrainingEnrollView(APIView):
         try:
             training = Training.objects.get(pk=pk)
         except Training.DoesNotExist:
-            return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
         if request.user in training.participants.all():
-            return Response({'error': 'You are already enrolled in this training'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Вы уже записались в этой тренировке'}, status=status.HTTP_400_BAD_REQUEST)
 
         if training.current_participants >= training.max_participants:
-            return Response({'error': 'This training is full'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Тренировка превышает максимальное количество участников'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Проверка уровня пользователя
+        if request.user.level < training.level:
+            return Response({'error': 'Ваш уровень ниже уровня тренировки'}, status=status.HTTP_403_FORBIDDEN)
 
         training.participants.add(request.user)
         training.current_participants = training.participants.count()
         training.save()
 
-        return Response({'success': 'You have been enrolled in the training'}, status=status.HTTP_200_OK)
+        return Response({'success': 'Вы записались на тренировку'}, status=status.HTTP_200_OK)
 
 
 class TrainingUnenrollView(APIView):
@@ -320,13 +324,36 @@ class TrainingUnenrollView(APIView):
         try:
             training = Training.objects.get(pk=pk)
         except Training.DoesNotExist:
-            return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
+            logger.error(f"Training with id {pk} not found")
+            return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
         if request.user not in training.participants.all():
-            return Response({'error': 'You are not enrolled in this training'}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(
+                f"User {request.user.id} tried to unenroll from training {pk} but was not enrolled")
+            return Response({'error': 'Вы не записаны на эту тренировку'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Проверка времени
+        now = timezone.now()
+        deadline = training.date - timezone.timedelta(hours=8)
+
+        logger.info(f"Unenroll attempt for training {pk}:")
+        logger.info(f"Current time (now): {now}")
+        logger.info(f"Training date: {training.date}")
+        logger.info(f"Deadline for unenrolling: {deadline}")
+        logger.info(f"Time until training: {training.date - now}")
+
+        if now >= deadline:
+            logger.warning(
+                f"Unenroll denied: current time {now} is past the deadline {deadline}")
+            return Response(
+                {'error': 'Вы не можете отменить запись на тренировку менее чем за 8 часов до её начала'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         training.participants.remove(request.user)
         training.current_participants = training.participants.count()
         training.save()
 
-        return Response({'success': 'You have been unenrolled from the training'}, status=status.HTTP_200_OK)
+        logger.info(
+            f"User {request.user.id} successfully unenrolled from training {pk}")
+        return Response({'success': 'Вы отменили запись на тренировку'}, status=status.HTTP_200_OK)

@@ -16,10 +16,8 @@ class UserSerializer(serializers.ModelSerializer):
         max_length=100, required=False, allow_blank=True)
     email = serializers.EmailField(required=True)
     phone = serializers.CharField(
-        max_length=15, required=False, allow_blank=True)
+        max_length=30, required=False, allow_blank=True)
     birth_date = serializers.DateField(required=False, allow_null=True)
-    city = serializers.CharField(
-        max_length=100, required=False, allow_blank=True)
     gender = serializers.ChoiceField(choices=[(
         'M', 'Male'), ('F', 'Female'), ('O', 'Other')], required=False, allow_blank=True)
     passport_data = serializers.CharField(
@@ -32,11 +30,13 @@ class UserSerializer(serializers.ModelSerializer):
     photo = serializers.ImageField(required=False, allow_null=True)
     password = serializers.CharField(write_only=True, required=False)
     role = serializers.ChoiceField(choices=CustomUser.ROLES, default='user')
+    level = serializers.IntegerField(
+        required=False, default=1)  # Добавленное поле
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'first_name', 'last_name', 'middle_name', 'email', 'phone', 'birth_date', 'city',
-                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'password', 'role')
+        fields = ('id', 'first_name', 'last_name', 'middle_name', 'email', 'phone', 'birth_date',
+                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'password', 'role', 'level')
 
     def validate_email(self, value):
         if self.instance and self.instance.email == value:
@@ -104,7 +104,8 @@ class LoginSerializer(serializers.Serializer):
 class GymSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gym
-        fields = '__all__'
+        fields = ['id', 'name', 'address', 'metro_station',
+                  'district', 'description', 'photo']
 
 
 class TrainerSerializer(serializers.ModelSerializer):
