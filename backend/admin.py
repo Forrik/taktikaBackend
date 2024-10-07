@@ -12,13 +12,12 @@ class ProfileInline(admin.StackedInline):
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
     list_display = ('email', 'first_name', 'middle_name', 'last_name', 'role', 'is_staff', 'is_active', 'phone',
-                    'birth_date', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'level')
-    list_filter = ('is_staff', 'is_active', 'role',
-                   'level')
+                    'birth_date', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'level', 'sports_category')
+    list_filter = ('is_staff', 'is_active', 'role', 'level')
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date',
-         'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'level')}),
+         'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'level', 'sports_category')}),
         ('Permissions', {'fields': ('is_active', 'is_staff',
          'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
@@ -26,10 +25,11 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'is_staff', 'is_active', 'level')}
+            'fields': ('email', 'password1', 'password2', 'first_name', 'middle_name', 'last_name', 'role', 'phone', 'birth_date', 'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'is_staff', 'is_active', 'level', 'sports_category')}
          ),
     )
-    search_fields = ('email', 'first_name', 'middle_name', 'last_name')
+    search_fields = ('email', 'first_name', 'middle_name',
+                     'last_name', 'sports_category')
     ordering = ('email',)
 
     actions = ['make_trainer', 'make_user', 'make_admin']
@@ -54,9 +54,9 @@ class CustomUserAdmin(UserAdmin):
 
 
 class GymAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'metro_station', 'district')
+    list_display = ('name', 'metro_station', 'district')
     list_filter = ('district',)
-    search_fields = ('name', 'address', 'metro_station')
+    search_fields = ('name',  'metro_station')
 
 
 class TrainingAdmin(admin.ModelAdmin):

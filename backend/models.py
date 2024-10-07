@@ -49,7 +49,8 @@ class CustomUser(AbstractUser):
     account_id = models.CharField(
         max_length=100, blank=True)  # Добавленный атрибут
     level = models.IntegerField(default=1)  # Добавленное поле
-
+    sports_category = models.CharField(
+        max_length=100, blank=True)  # Добавленное поле
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
@@ -95,7 +96,6 @@ class Profile(models.Model):
 
 class Gym(models.Model):
     name = models.CharField(max_length=100)
-    address = models.CharField(max_length=200)
     metro_station = models.CharField(max_length=100)
     district = models.CharField(max_length=100)
     description = models.TextField()

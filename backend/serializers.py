@@ -32,11 +32,13 @@ class UserSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=CustomUser.ROLES, default='user')
     level = serializers.IntegerField(
         required=False, default=1)  # Добавленное поле
+    sports_category = serializers.CharField(
+        max_length=100, required=False, allow_blank=True)  # Добавленное поле
 
     class Meta:
         model = CustomUser
         fields = ('id', 'first_name', 'last_name', 'middle_name', 'email', 'phone', 'birth_date',
-                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'password', 'role', 'level')
+                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'password', 'role', 'level', 'sports_category')
 
     def validate_email(self, value):
         if self.instance and self.instance.email == value:
@@ -104,7 +106,7 @@ class LoginSerializer(serializers.Serializer):
 class GymSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gym
-        fields = ['id', 'name', 'address', 'metro_station',
+        fields = ['id', 'name', 'metro_station',
                   'district', 'description', 'photo']
 
 
