@@ -132,11 +132,12 @@ class TrainingSerializer(serializers.ModelSerializer):
     unenroll_deadline = serializers.DateTimeField(required=False)
     gender = serializers.ChoiceField(
         choices=Training.GENDER_CHOICES, default='any')
+    participants = UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Training
         fields = ['id', 'date', 'level', 'max_participants', 'current_participants', 'trainer', 'gym', 'trainer_id',
-                  'gym_id', 'is_recurring', 'recurrence_end_date', 'unenroll_deadline', 'gender']
+                  'gym_id', 'is_recurring', 'recurrence_end_date', 'unenroll_deadline', 'gender', 'participants']
 
     def create(self, validated_data):
         validated_data.pop('id', None)
