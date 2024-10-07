@@ -116,6 +116,12 @@ class Trainer(models.Model):
 
 
 class Training(models.Model):
+    GENDER_CHOICES = [
+        ('any', 'Any'),
+        ('male', 'Male'),
+        ('female', 'Female'),
+    ]
+
     gym = models.ForeignKey(Gym, on_delete=models.CASCADE, null=False)
     trainer = models.ForeignKey(
         Trainer, on_delete=models.CASCADE, related_name='trainings')
@@ -131,6 +137,8 @@ class Training(models.Model):
     recurrence_end_date = models.DateField(null=True, blank=True)
     parent_training = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='recurring_trainings')
+    gender = models.CharField(
+        max_length=10, choices=GENDER_CHOICES, default='any')  # Добавленное поле
 
     def __str__(self):
         return f"Training at {self.gym.name} on {self.date}"
@@ -155,7 +163,8 @@ class Training(models.Model):
                 intensity=self.intensity,
                 is_recurring=True,
                 recurrence_end_date=self.recurrence_end_date,
-                parent_training=self
+                parent_training=self,
+                gender=self.gender
             )
 
 

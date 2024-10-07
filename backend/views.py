@@ -298,10 +298,10 @@ class TrainingEnrollView(APIView):
         try:
             training = Training.objects.get(pk=pk)
         except Training.DoesNotExist:
-            return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
         if request.user in training.participants.all():
-            return Response({'error': 'Вы уже записались в этой тренировке'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Вы уже записались на эту тренировку'}, status=status.HTTP_400_BAD_REQUEST)
 
         if training.current_participants >= training.max_participants:
             return Response({'error': 'Тренировка превышает максимальное количество участников'}, status=status.HTTP_400_BAD_REQUEST)
@@ -309,6 +309,10 @@ class TrainingEnrollView(APIView):
         # Проверка уровня пользователя
         if request.user.level < training.level:
             return Response({'error': 'Ваш уровень ниже уровня тренировки'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Проверка пола пользователя и тренировки
+        if training.gender != 'any' and training.gender != request.user.gender:
+            return Response({'error': 'Ваш пол не соответствует требованиям тренировки'}, status=status.HTTP_403_FORBIDDEN)
 
         training.participants.add(request.user)
         training.current_participants = training.participants.count()

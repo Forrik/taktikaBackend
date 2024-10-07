@@ -126,25 +126,20 @@ class TrainingSerializer(serializers.ModelSerializer):
     trainer = TrainerSerializer(read_only=True)
     gym = GymSerializer(read_only=True)
     trainer_id = serializers.PrimaryKeyRelatedField(
-        queryset=Trainer.objects.all(),
-        source='trainer',
-        write_only=True
-    )
+        queryset=Trainer.objects.all(), source='trainer', write_only=True)
     gym_id = serializers.PrimaryKeyRelatedField(
-        queryset=Gym.objects.all(),
-        source='gym',
-        write_only=True
-    )
-    unenroll_deadline = serializers.DateTimeField(required=False)  # Новое поле
+        queryset=Gym.objects.all(), source='gym', write_only=True)
+    unenroll_deadline = serializers.DateTimeField(required=False)
+    gender = serializers.ChoiceField(
+        choices=Training.GENDER_CHOICES, default='any')
 
     class Meta:
         model = Training
-        fields = ['id', 'date', 'level', 'max_participants',
-                  'current_participants', 'trainer', 'gym', 'trainer_id', 'gym_id',
-                  'is_recurring', 'recurrence_end_date', 'unenroll_deadline']  # Добавьте unenroll_deadline
+        fields = ['id', 'date', 'level', 'max_participants', 'current_participants', 'trainer', 'gym', 'trainer_id',
+                  'gym_id', 'is_recurring', 'recurrence_end_date', 'unenroll_deadline', 'gender']
 
     def create(self, validated_data):
-        validated_data.pop('id', None)  # Удаляем id, если он есть
+        validated_data.pop('id', None)
         return Training.objects.create(**validated_data)
 
 
