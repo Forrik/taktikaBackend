@@ -202,6 +202,7 @@ class Subscription(models.Model):
     client_type = models.CharField(
         max_length=50, choices=CLIENT_TYPES, blank=True)  # Увеличиваем длину поля
     month = models.CharField(max_length=20, blank=True)
+    is_paid = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Subscription for {self.user.email} at {self.gym.name}"

@@ -4,7 +4,7 @@ from .views import (
     RegisterView, LoginView, ProfileView, GymListView, GymDetailView, TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
     TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView, ManageRecurringTrainingsView,
-    SubscriptionDetailView, CreateSubscriptionView, CreatePaymentView
+    SubscriptionDetailView, CreateSubscriptionView, CreatePaymentView, payment_webhook
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -41,6 +41,7 @@ urlpatterns = [
     path('create_payment/', CreatePaymentView.as_view(), name='create_payment'),
     path('subscriptions/create/', CreateSubscriptionView.as_view(),
          name='subscription-create'),
+    path('webhook/payment/', payment_webhook, name='payment_webhook'),
 ]
 
 

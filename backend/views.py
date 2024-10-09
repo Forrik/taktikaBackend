@@ -21,6 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
+from django.http import HttpResponse
 
 import json
 logger = logging.getLogger(__name__)
@@ -29,8 +30,24 @@ Configuration.account_id = settings.YOOKASSA_SHOP_ID
 Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 
 
-Configuration.account_id = settings.YOOKASSA_SHOP_ID
-Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
+@csrf_exempt
+def payment_webhook(request):
+    if request.method == 'POST':
+        # Получаем данные от платежной системы
+        data = request.POST
+        payment_id = data.get('payment_id')
+
+        # Обновляем статус оплаты абонемента
+        try:
+            payment_id = data.get('object').get('id')
+            subscription = Subscription.objects.get(payment_id=payment_id)
+            subscription.is_paid = True
+            subscription.save()
+            return HttpResponse(status=200)
+        except Subscription.DoesNotExist:
+            return HttpResponse(status=404)
+
+    return HttpResponse(status=405)
 
 
 @method_decorator(csrf_protect, name='dispatch')

@@ -150,7 +150,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ['id', 'user', 'gym', 'type', 'start_date', 'end_date', 'trainings_left',
-                  'price', 'trainer', 'payment_id', 'days_of_week', 'client_type', 'month']
+                  'price', 'trainer', 'payment_id', 'days_of_week', 'client_type', 'month', 'is_paid']
 
     def validate_days_of_week(self, value):
         valid_days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
