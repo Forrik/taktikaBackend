@@ -312,10 +312,14 @@ class CreateSubscriptionView(APIView):
 
     @transaction.atomic
     def post(self, request):
+        # Если пользователь не передан в запросе, используем пользователя из токена аутентификации
+        if 'user' not in request.data:
+            request.data['user'] = request.user.id
+
         serializer = SubscriptionSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                subscription = serializer.save(user=request.user)
+                subscription = serializer.save()
                 gym = subscription.gym
                 trainer = subscription.trainer
                 amount = subscription.price
@@ -323,12 +327,20 @@ class CreateSubscriptionView(APIView):
                     Decimal('0.7')  # 70% на р/с тренера
 
                 # Проверка наличия тренера и зала
-                if not gym or not trainer:
-                    return Response({'error': 'Gym or trainer not found'}, status=status.HTTP_400_BAD_REQUEST)
+                if not gym:
+                    logger.error("Gym not found")
+                    return Response({'error': 'Gym not found'}, status=status.HTTP_400_BAD_REQUEST)
+                if not trainer:
+                    logger.error("Trainer not found")
+                    return Response({'error': 'Trainer not found'}, status=status.HTTP_400_BAD_REQUEST)
 
                 # Создание сплитованного платежа
-                payment = create_split_payment(
-                    amount, trainer.user.account_id, recipient_amount)
+                try:
+                    payment = create_split_payment(
+                        amount, trainer.user.account_id, recipient_amount)
+                except Exception as e:
+                    logger.error(f"Error creating payment: {e}")
+                    return Response({'error': 'Failed to create payment'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                 # Сохранение данных платежа в базе данных
                 subscription.payment_id = payment.id
@@ -340,6 +352,7 @@ class CreateSubscriptionView(APIView):
                 logger.error(f"Error creating subscription: {e}")
                 return Response({'error': 'Failed to create subscription'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        logger.error(f"Serializer errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

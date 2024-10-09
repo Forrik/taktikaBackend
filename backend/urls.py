@@ -25,8 +25,6 @@ urlpatterns = [
          TrainingUnenrollView.as_view(), name='training-unenroll'),
     path('subscriptions/', SubscriptionListView.as_view(),
          name='subscription-list'),
-    path('subscriptions/create/', CreateSubscriptionView.as_view(),
-         name='subscription-create'),  # Добавлен маршрут для создания абонемента
     path('subscriptions/<int:pk>/', SubscriptionDetailView.as_view(),
          name='subscription-detail'),  # Добавлен маршрут для деталей абонемента
     path('feedback/', TrainingFeedbackListView.as_view(), name='feedback-list'),
@@ -41,6 +39,8 @@ urlpatterns = [
          name='subscription-detail'),
     # Добавлен маршрут для создания платежа
     path('create_payment/', CreatePaymentView.as_view(), name='create_payment'),
+    path('subscriptions/create/', CreateSubscriptionView.as_view(),
+         name='subscription-create'),
 ]
 
 

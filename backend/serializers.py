@@ -145,9 +145,21 @@ class TrainingSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
+    days_of_week = serializers.CharField(required=False)
+
     class Meta:
         model = Subscription
-        fields = '__all__'
+        fields = ['id', 'user', 'gym', 'type', 'start_date', 'end_date', 'trainings_left',
+                  'price', 'trainer', 'payment_id', 'days_of_week', 'client_type', 'month']
+
+    def validate_days_of_week(self, value):
+        valid_days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+        days = value.split(',')
+        for day in days:
+            if day not in valid_days:
+                raise serializers.ValidationError(
+                    f"{day} is not a valid choice.")
+        return value
 
 
 class TrainingFeedbackSerializer(serializers.ModelSerializer):

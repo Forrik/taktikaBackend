@@ -169,16 +169,39 @@ class Training(models.Model):
 
 
 class Subscription(models.Model):
+    DAYS_OF_WEEK = [
+        ('mon', 'Monday'),
+        ('tue', 'Tuesday'),
+        ('wed', 'Wednesday'),
+        ('thu', 'Thursday'),
+        ('fri', 'Friday'),
+        ('sat', 'Saturday'),
+        ('sun', 'Sunday'),
+    ]
+
+    CLIENT_TYPES = [
+        ('adult', 'Adult'),
+        ('child', 'Child'),
+    ]
+
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     gym = models.ForeignKey(
         Gym, on_delete=models.CASCADE, null=True, blank=True)
-    type = models.CharField(max_length=20)
+    type = models.CharField(max_length=50)  # Увеличиваем длину поля
     start_date = models.DateField()
     end_date = models.DateField()
     trainings_left = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     trainer = models.ForeignKey(
-        Trainer, on_delete=models.CASCADE, null=True, blank=True)  # Оплата через тренера
+        Trainer, on_delete=models.CASCADE, null=True, blank=True)
+    # Добавлено для хранения ID платежа
+    payment_id = models.CharField(max_length=100, blank=True, null=True)
+
+    # Новые поля
+    days_of_week = models.CharField(max_length=50, blank=True)
+    client_type = models.CharField(
+        max_length=50, choices=CLIENT_TYPES, blank=True)  # Увеличиваем длину поля
+    month = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
         return f"Subscription for {self.user.email} at {self.gym.name}"
