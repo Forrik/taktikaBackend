@@ -15,7 +15,93 @@ from decimal import Decimal
 import requests
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.conf import settings
+from yookassa import Configuration, Payment
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
+from django.views.decorators.csrf import csrf_protect
+from django.utils.decorators import method_decorator
+
+import json
 logger = logging.getLogger(__name__)
+
+Configuration.account_id = settings.YOOKASSA_SHOP_ID
+Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
+
+
+Configuration.account_id = settings.YOOKASSA_SHOP_ID
+Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
+
+
+@method_decorator(csrf_protect, name='dispatch')
+class CreatePaymentView(APIView):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            amount = data.get('amount')
+            recipient_account_id = data.get('recipient_account_id')
+            recipient_amount = data.get('recipient_amount')
+
+            if amount is None or recipient_amount is None:
+                return Response({"error": "Amount and recipient_amount must be provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                amount = float(amount)
+                recipient_amount = float(recipient_amount)
+            except ValueError:
+                return Response({"error": "Amount and recipient_amount must be valid numbers"}, status=status.HTTP_400_BAD_REQUEST)
+
+            payment = Payment.create({
+                "amount": {
+                    "value": str(amount),
+                    "currency": "RUB"
+                },
+                "payment_method_data": {
+                    "type": "bank_card"
+                },
+                "confirmation": {
+                    "type": "redirect",
+                    # Replace with your actual return URL
+                    "return_url": "https://abcd1234.ngrok.io/return_url"
+                },
+                "capture": True,
+                "description": "Payment for subscription",
+                "receipt": {
+                    "customer": {
+                        "email": "customer@example.com"  # Replace with actual customer email
+                    },
+                    "items": [
+                        {
+                            "description": "Subscription",
+                            "quantity": "1.00",
+                            "amount": {
+                                "value": str(amount),
+                                "currency": "RUB"
+                            },
+                            "vat_code": 1
+                        }
+                    ]
+                },
+                "splits": [
+                    {
+                        "account_id": recipient_account_id,
+                        "amount": {
+                            "value": str(recipient_amount),
+                            "currency": "RUB"
+                        }
+                    },
+                    {
+                        "account_id": Configuration.account_id,
+                        "amount": {
+                            "value": str(amount - recipient_amount),
+                            "currency": "RUB"
+                        }
+                    }
+                ]
+            })
+            return Response({"payment_url": payment.confirmation.confirmation_url})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def amocrm_callback(request):

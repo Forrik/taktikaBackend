@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
-
+from corsheaders.defaults import default_headers
+from corsheaders.defaults import default_methods
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,6 +26,9 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
+
+YOOKASSA_SHOP_ID = '464176'
+YOOKASSA_SECRET_KEY = 'test_OjtZbDjgDDZnA3Cf_zKHY_pFI4VvKVhizI9FBYZuBdw'
 
 # Application definition
 
@@ -53,7 +57,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 AUTH_USER_MODEL = 'backend.CustomUser'
 
@@ -78,8 +82,20 @@ CORS_ALLOWED_ORIGINS = [
     'http://185.228.234.42:8000',
     'http://185.228.234.42:8080',
     'http://127.0.0.1:8080',
-    'http://45.8.229.240:8080'
+    'http://45.8.229.240:8080',
+    'http://45.8.229.240:5173',
 ]
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = list(default_methods)
+CORS_ALLOW_HEADERS = list(default_headers) + ['X-CSRFToken']
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']  # Add your frontend URL here
+CSRF_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS
+CSRF_COOKIE_HTTPONLY = False  # False allows JavaScript to access the cookie
+SESSION_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS
+SESSION_COOKIE_HTTPONLY = True
 
 # Media files
 MEDIA_URL = '/media/'

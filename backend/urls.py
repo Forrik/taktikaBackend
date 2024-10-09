@@ -4,7 +4,7 @@ from .views import (
     RegisterView, LoginView, ProfileView, GymListView, GymDetailView, TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
     TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView, ManageRecurringTrainingsView,
-    SubscriptionDetailView, CreateSubscriptionView  # Добавлены новые представления
+    SubscriptionDetailView, CreateSubscriptionView, CreatePaymentView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -35,6 +35,12 @@ urlpatterns = [
     path('manage-recurring-trainings/', ManageRecurringTrainingsView.as_view(),
          name='manage-recurring-trainings'),
     path('oauth/callback/', views.amocrm_callback, name='amocrm_callback'),
+    path('subscriptions/create/', CreateSubscriptionView.as_view(),
+         name='subscription-create'),  # Добавлен маршрут для создания абонемента
+    path('subscriptions/<int:pk>/', SubscriptionDetailView.as_view(),
+         name='subscription-detail'),
+    # Добавлен маршрут для создания платежа
+    path('create_payment/', CreatePaymentView.as_view(), name='create_payment'),
 ]
 
 

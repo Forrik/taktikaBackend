@@ -1,7 +1,7 @@
 from yookassa import Configuration, Payment
 
-Configuration.account_id = 'your_account_id'
-Configuration.secret_key = 'your_secret_key'
+Configuration.account_id = '464176'
+Configuration.secret_key = 'test_OjtZbDjgDDZnA3Cf_zKHY_pFI4VvKVhizI9FBYZuBdw'
 
 
 def create_split_payment(amount, recipient_account_id, recipient_amount):
@@ -15,7 +15,7 @@ def create_split_payment(amount, recipient_account_id, recipient_amount):
         },
         "confirmation": {
             "type": "redirect",
-            "return_url": "https://your-website.com/return_url"
+            "return_url": "https://localhost:5173"
         },
         "capture": True,
         "description": "Payment for subscription",
