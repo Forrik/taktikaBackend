@@ -14,7 +14,8 @@ SECRET_KEY = 'django-insecure-j+8c6%orh7gv$aagt6twhp2$4l$792h_g7hb@@2@1r_yo9)yq9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['45.8.229.240', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['45.8.229.240', 'localhost',
+                 '127.0.0.1', '.ngrok-free.app']
 
 DATABASES = {
     'default': {
@@ -84,6 +85,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8080',
     'http://45.8.229.240:8080',
     'http://45.8.229.240:5173',
+
 ]
 
 
@@ -91,7 +93,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = list(default_methods)
 CORS_ALLOW_HEADERS = list(default_headers) + ['X-CSRFToken']
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']  # Add your frontend URL here
+CSRF_TRUSTED_ORIGINS = ['http://localhost:5173',
+                        'https://*.ngrok-free.app']  # Add your frontend URL here
 CSRF_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS
 CSRF_COOKIE_HTTPONLY = False  # False allows JavaScript to access the cookie
 SESSION_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS

@@ -1,3 +1,4 @@
+from .models import Subscription
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -33,21 +34,42 @@ Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 @csrf_exempt
 def payment_webhook(request):
     if request.method == 'POST':
-        # Получаем данные от платежной системы
-        data = request.POST
-        payment_id = data.get('payment_id')
-
-        # Обновляем статус оплаты абонемента
         try:
-            payment_id = data.get('object').get('id')
-            subscription = Subscription.objects.get(payment_id=payment_id)
-            subscription.is_paid = True
-            subscription.save()
-            return HttpResponse(status=200)
-        except Subscription.DoesNotExist:
-            return HttpResponse(status=404)
+            # Получаем данные от ЮКассы
+            data = json.loads(request.body)
+            logger.info(f"Received data: {data}")
 
-    return HttpResponse(status=405)
+            # Проверяем тип уведомления
+            if data['event'] == 'payment.succeeded':
+                # Получаем объект платежа
+                payment_object = data['object']
+                payment_id = payment_object['id']
+
+                # Обновляем статус оплаты абонемента
+                try:
+                    subscription = Subscription.objects.get(
+                        payment_id=payment_id)
+                    subscription.is_paid = True
+                    subscription.save()
+                    logger.info(f"Subscription {payment_id} marked as paid")
+                    return HttpResponse(status=200)
+                except Subscription.DoesNotExist:
+                    logger.error(
+                        f"Subscription with payment_id {payment_id} not found")
+                    return HttpResponse(status=404, content='Абонемент не найден')
+                except Exception as e:
+                    logger.error(f"Server error: {str(e)}")
+                    return HttpResponse(status=500, content=f'Ошибка сервера: {str(e)}')
+            else:
+                logger.warning(f"Unhandled event: {data['event']}")
+                return HttpResponse(status=200)
+
+        except json.JSONDecodeError:
+            logger.error("Invalid data format")
+            return HttpResponse(status=400, content='Неверный формат данных')
+
+    logger.warning("Invalid request method")
+    return HttpResponse(status=405, content='Неверный метод запроса')
 
 
 @method_decorator(csrf_protect, name='dispatch')

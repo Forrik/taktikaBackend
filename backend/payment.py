@@ -58,7 +58,7 @@ def create_split_payment(amount, recipient_account_id, recipient_amount):
 def create_webhook():
     response = Webhook.add({
         "event": "payment.succeeded",
-        "url": "https://localhost:8000/webhook/payment/",
+        "url": "https://dbe0-178-214-244-190.ngrok-free.app/webhook/payment/",
     })
     return response
 
