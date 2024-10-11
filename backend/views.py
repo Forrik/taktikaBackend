@@ -436,26 +436,64 @@ class TrainingEnrollView(APIView):
         try:
             training = Training.objects.get(pk=pk)
         except Training.DoesNotExist:
+            logger.error(f"Training with id {pk} not found.")
             return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
+        logger.info(
+            f"Checking enrollment for user {request.user.id} on training {pk}.")
+
+        # Проверка, записан ли пользователь уже на эту тренировку
         if request.user in training.participants.all():
+            logger.warning(
+                f"User {request.user.id} already enrolled in training {pk}.")
             return Response({'error': 'Вы уже записались на эту тренировку'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Проверка максимального количества участников
         if training.current_participants >= training.max_participants:
+            logger.warning(f"Training {pk} exceeds maximum participants.")
             return Response({'error': 'Тренировка превышает максимальное количество участников'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Проверка уровня пользователя
         if request.user.level < training.level:
+            logger.warning(
+                f"User {request.user.id} level {request.user.level} is below training level {training.level}.")
             return Response({'error': 'Ваш уровень ниже уровня тренировки'}, status=status.HTTP_403_FORBIDDEN)
 
         # Проверка пола пользователя и тренировки
-        if training.gender != 'any' and training.gender != request.user.gender:
+        user_gender = request.user.gender.lower()
+        training_gender = training.gender.lower()
+        if training_gender != 'any' and user_gender != training_gender:
+            logger.warning(
+                f"User {request.user.id} gender {user_gender} does not match training gender {training_gender}.")
             return Response({'error': 'Ваш пол не соответствует требованиям тренировки'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Проверка действительного абонемента
+        subscription = Subscription.objects.filter(
+            user=request.user, is_paid=True).first()
+        if not subscription:
+            logger.warning(
+                f"User {request.user.id} does not have a subscription.")
+            return Response({'error': 'У вас нет абонемента'}, status=status.HTTP_403_FORBIDDEN)
+
+        if not subscription.is_valid():
+            logger.warning(
+                f"Subscription {subscription.id} is not valid. Start date: {subscription.start_date}, End date: {subscription.end_date}, Trainings left: {subscription.trainings_left}")
+            return Response({'error': 'Ваш абонемент не действителен'}, status=status.HTTP_403_FORBIDDEN)
+
+        if not subscription.is_valid_for_training(training):
+            logger.warning(
+                f"Subscription {subscription.id} is not valid for training {pk}. Training details: {training.__dict__}")
+            return Response({'error': 'Ваш абонемент не действителен для этой тренировки'}, status=status.HTTP_403_FORBIDDEN)
 
         training.participants.add(request.user)
         training.current_participants = training.participants.count()
         training.save()
 
+        # Использование занятия в абонементе
+        subscription.use_training()
+
+        logger.info(
+            f"User {request.user.id} successfully enrolled in training {pk}.")
         return Response({'success': 'Вы записались на тренировку'}, status=status.HTTP_200_OK)
 
 

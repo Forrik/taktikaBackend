@@ -4,6 +4,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CustomUserManager(BaseUserManager):
@@ -206,6 +209,47 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"Subscription for {self.user.email} at {self.gym.name}"
+
+    def is_valid(self):
+        return self.start_date <= timezone.now().date() <= self.end_date and self.trainings_left > 0
+
+    def is_valid_for_training(self, training):
+        """
+        Проверяет, действителен ли абонемент для записи на данное занятие.
+        """
+        if not self.is_valid():
+            logger.debug(
+                f"Subscription {self.id} is not valid. Start date: {self.start_date}, End date: {self.end_date}, Trainings left: {self.trainings_left}")
+            return False
+
+        # Проверка дня недели
+        training_day_of_week = training.date.strftime('%a').lower()[:3]
+        if self.days_of_week and training_day_of_week not in self.days_of_week.split(','):
+            logger.debug(
+                f"Training day {training_day_of_week} does not match subscription days {self.days_of_week}.")
+            return False
+
+        # Проверка месяца
+        training_month = training.date.strftime('%b').lower()
+        training_month_year = f"{training.date.year}-{training.date.month}"
+
+        if self.month and training_month_year not in self.month:
+            logger.debug(
+                f"Training month {training_month_year} does not match subscription month {self.month}.")
+            return False
+
+        logger.debug(f"Subscription {self.id} is valid for training {training.id}. Start date: {self.start_date}, End date: {self.end_date}, Trainings left: {self.trainings_left}, Days of week: {self.days_of_week}, Month: {self.month}")
+        return True
+
+    def use_training(self):
+        """
+        Уменьшает количество оставшихся тренировок в абонементе.
+        """
+        if self.trainings_left > 0:
+            self.trainings_left -= 1
+            self.save()
+        else:
+            logger.warning(f"No trainings left in subscription {self.id}.")
 
 
 class TrainingFeedback(models.Model):

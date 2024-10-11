@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-j+8c6%orh7gv$aagt6twhp2$4l$792h_g7hb@@2@1r_yo9)yq9
 DEBUG = True
 
 ALLOWED_HOSTS = ['45.8.229.240', 'localhost',
-                 '127.0.0.1', '.ngrok-free.app']
+                 '127.0.0.1',  '.ngrok-free.app', '*.ngrok-free.app']
 
 DATABASES = {
     'default': {
@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'backend',
+    'sslserver'
+
 ]
 
 MIDDLEWARE = [
@@ -85,16 +87,29 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8080',
     'http://45.8.229.240:8080',
     'http://45.8.229.240:5173',
+    'https://*.ngrok-free.app',
+
+
 
 ]
 
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.ngrok-free.app']
+CORS_ALLOW_ALL_ORIGINS = True  # Только для отладки!
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'http://*.ngrok-free.app']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = False
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = list(default_methods)
 CORS_ALLOW_HEADERS = list(default_headers) + ['X-CSRFToken']
 
 CSRF_TRUSTED_ORIGINS = ['http://localhost:5173',
-                        'https://*.ngrok-free.app']  # Add your frontend URL here
+                        'https://*.ngrok-free.app',
+                        'http://*.ngrok-free.app',
+                        ]  # Add your frontend URL here
 CSRF_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS
 CSRF_COOKIE_HTTPONLY = False  # False allows JavaScript to access the cookie
 SESSION_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS
