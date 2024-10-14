@@ -35,39 +35,41 @@ Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 def payment_webhook(request):
     if request.method == 'POST':
         try:
-            # Получаем данные от ЮКассы
             data = json.loads(request.body)
             logger.info(f"Received data: {data}")
-
-            # Проверяем тип уведомления
             if data['event'] == 'payment.succeeded':
-                # Получаем объект платежа
                 payment_object = data['object']
                 payment_id = payment_object['id']
-
-                # Обновляем статус оплаты абонемента
                 try:
                     subscription = Subscription.objects.get(
                         payment_id=payment_id)
-                    subscription.is_paid = True
-                    subscription.save()
-                    logger.info(f"Subscription {payment_id} marked as paid")
+                    if not subscription.is_paid:
+                        logger.info(
+                            f"Marking subscription {payment_id} as paid")
+                        subscription.is_paid = True
+                        subscription.save()
+                        logger.info(
+                            f"Calling enroll_user_to_trainings for subscription {payment_id}")
+                        subscription.enroll_user_to_trainings()
+                        logger.info(
+                            f"Subscription {payment_id} marked as paid and user enrolled to trainings")
+                    else:
+                        logger.info(
+                            f"Subscription {payment_id} was already marked as paid")
                     return HttpResponse(status=200)
                 except Subscription.DoesNotExist:
                     logger.error(
                         f"Subscription with payment_id {payment_id} not found")
                     return HttpResponse(status=404, content='Абонемент не найден')
-                except Exception as e:
-                    logger.error(f"Server error: {str(e)}")
-                    return HttpResponse(status=500, content=f'Ошибка сервера: {str(e)}')
             else:
                 logger.warning(f"Unhandled event: {data['event']}")
                 return HttpResponse(status=200)
-
         except json.JSONDecodeError:
             logger.error("Invalid data format")
             return HttpResponse(status=400, content='Неверный формат данных')
-
+        except Exception as e:
+            logger.error(f"Server error: {str(e)}")
+            return HttpResponse(status=500, content=f'Ошибка сервера: {str(e)}')
     logger.warning("Invalid request method")
     return HttpResponse(status=405, content='Неверный метод запроса')
 
@@ -385,6 +387,9 @@ class CreateSubscriptionView(APIView):
                 subscription.payment_id = payment.id
                 subscription.save()
 
+                # Автоматическая запись на тренировки
+                subscription.enroll_user_to_trainings()
+
                 return Response({'payment_url': payment.confirmation.confirmation_url}, status=status.HTTP_201_CREATED)
 
             except Exception as e:
@@ -436,65 +441,52 @@ class TrainingEnrollView(APIView):
         try:
             training = Training.objects.get(pk=pk)
         except Training.DoesNotExist:
-            logger.error(f"Training with id {pk} not found.")
             return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
-        logger.info(
-            f"Checking enrollment for user {request.user.id} on training {pk}.")
-
-        # Проверка, записан ли пользователь уже на эту тренировку
         if request.user in training.participants.all():
-            logger.warning(
-                f"User {request.user.id} already enrolled in training {pk}.")
             return Response({'error': 'Вы уже записались на эту тренировку'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Проверка максимального количества участников
         if training.current_participants >= training.max_participants:
-            logger.warning(f"Training {pk} exceeds maximum participants.")
-            return Response({'error': 'Тренировка превышает максимальное количество участников'}, status=status.HTTP_400_BAD_REQUEST)
+            training.add_to_reserve(request.user)
+            return Response({'success': 'Вы добавлены в резерв'}, status=status.HTTP_200_OK)
 
-        # Проверка уровня пользователя
-        if request.user.level < training.level:
-            logger.warning(
-                f"User {request.user.id} level {request.user.level} is below training level {training.level}.")
-            return Response({'error': 'Ваш уровень ниже уровня тренировки'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Проверка пола пользователя и тренировки
-        user_gender = request.user.gender.lower()
-        training_gender = training.gender.lower()
-        if training_gender != 'any' and user_gender != training_gender:
-            logger.warning(
-                f"User {request.user.id} gender {user_gender} does not match training gender {training_gender}.")
-            return Response({'error': 'Ваш пол не соответствует требованиям тренировки'}, status=status.HTTP_403_FORBIDDEN)
-
-        # Проверка действительного абонемента
         subscription = Subscription.objects.filter(
             user=request.user, is_paid=True).first()
         if not subscription:
-            logger.warning(
-                f"User {request.user.id} does not have a subscription.")
             return Response({'error': 'У вас нет абонемента'}, status=status.HTTP_403_FORBIDDEN)
 
-        if not subscription.is_valid():
-            logger.warning(
-                f"Subscription {subscription.id} is not valid. Start date: {subscription.start_date}, End date: {subscription.end_date}, Trainings left: {subscription.trainings_left}")
-            return Response({'error': 'Ваш абонемент не действителен'}, status=status.HTTP_403_FORBIDDEN)
-
         if not subscription.is_valid_for_training(training):
-            logger.warning(
-                f"Subscription {subscription.id} is not valid for training {pk}. Training details: {training.__dict__}")
             return Response({'error': 'Ваш абонемент не действителен для этой тренировки'}, status=status.HTTP_403_FORBIDDEN)
 
         training.participants.add(request.user)
         training.current_participants = training.participants.count()
         training.save()
 
-        # Использование занятия в абонементе
         subscription.use_training()
 
-        logger.info(
-            f"User {request.user.id} successfully enrolled in training {pk}.")
         return Response({'success': 'Вы записались на тренировку'}, status=status.HTTP_200_OK)
+
+
+class TrainingConfirmView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, pk):
+        try:
+            training = Training.objects.get(pk=pk)
+        except Training.DoesNotExist:
+            return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
+
+        subscription = Subscription.objects.filter(
+            user=request.user, is_paid=True).first()
+        if not subscription:
+            return Response({'error': 'У вас нет абонемента'}, status=status.HTTP_403_FORBIDDEN)
+
+        if subscription.confirmed:
+            return Response({'error': 'Вы уже подтвердили запись'}, status=status.HTTP_400_BAD_REQUEST)
+
+        subscription.confirm_enrollment()
+
+        return Response({'success': 'Вы подтвердили запись на тренировку'}, status=status.HTTP_200_OK)
 
 
 class TrainingUnenrollView(APIView):
@@ -504,36 +496,43 @@ class TrainingUnenrollView(APIView):
         try:
             training = Training.objects.get(pk=pk)
         except Training.DoesNotExist:
-            logger.error(f"Training with id {pk} not found")
             return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
         if request.user not in training.participants.all():
-            logger.warning(
-                f"User {request.user.id} tried to unenroll from training {pk} but was not enrolled")
             return Response({'error': 'Вы не записаны на эту тренировку'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Проверка времени
-        now = timezone.now()
-        deadline = training.unenroll_deadline
+        subscription = Subscription.objects.filter(
+            user=request.user, is_paid=True).first()
+        if not subscription:
+            return Response({'error': 'У вас нет абонемента'}, status=status.HTTP_403_FORBIDDEN)
 
-        logger.info(f"Unenroll attempt for training {pk}:")
-        logger.info(f"Current time (now): {now}")
-        logger.info(f"Training date: {training.date}")
-        logger.info(f"Deadline for unenrolling: {deadline}")
-        logger.info(f"Time until training: {training.date - now}")
-
-        if now >= deadline:
-            logger.warning(
-                f"Unenroll denied: current time {now} is past the deadline {deadline}")
-            return Response(
-                {'error': 'Вы не можете отменить запись на тренировку после установленного дедлайна'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if subscription.confirmed:
+            return Response({'error': 'Вы уже подтвердили запись и не можете отменить её'}, status=status.HTTP_400_BAD_REQUEST)
 
         training.participants.remove(request.user)
         training.current_participants = training.participants.count()
         training.save()
 
-        logger.info(
-            f"User {request.user.id} successfully unenrolled from training {pk}")
         return Response({'success': 'Вы отменили запись на тренировку'}, status=status.HTTP_200_OK)
+
+
+class TrainingConfirmView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, pk):
+        try:
+            training = Training.objects.get(pk=pk)
+        except Training.DoesNotExist:
+            return Response({'error': 'Тренировка не найдена'}, status=status.HTTP_404_NOT_FOUND)
+
+        subscription = Subscription.objects.filter(
+            user=request.user, is_paid=True).first()
+        if not subscription:
+            return Response({'error': 'У вас нет абонемента'}, status=status.HTTP_403_FORBIDDEN)
+
+        if subscription.confirmed:
+            return Response({'error': 'Вы уже подтвердили запись'}, status=status.HTTP_400_BAD_REQUEST)
+
+        subscription.confirm_enrollment()
+
+        return Response({'success': 'Вы подтвердили запись на тренировку'}, status=status.HTTP_200_OK)

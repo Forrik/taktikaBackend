@@ -1,10 +1,11 @@
+# backend/urls.py
 from django.contrib import admin
 from django.urls import path
 from .views import (
     RegisterView, LoginView, ProfileView, GymListView, GymDetailView, TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
     TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView, ManageRecurringTrainingsView,
-    SubscriptionDetailView, CreateSubscriptionView, CreatePaymentView, payment_webhook
+    SubscriptionDetailView, CreateSubscriptionView, CreatePaymentView, payment_webhook, TrainingConfirmView,
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -23,10 +24,12 @@ urlpatterns = [
          TrainingEnrollView.as_view(), name='training-enroll'),
     path('trainings/<int:pk>/unenroll/',
          TrainingUnenrollView.as_view(), name='training-unenroll'),
+    path('trainings/<int:pk>/confirm/', TrainingConfirmView.as_view(),
+         name='training-confirm'),  # Добавлен маршрут для подтверждения записи
     path('subscriptions/', SubscriptionListView.as_view(),
          name='subscription-list'),
     path('subscriptions/<int:pk>/', SubscriptionDetailView.as_view(),
-         name='subscription-detail'),  # Добавлен маршрут для деталей абонемента
+         name='subscription-detail'),
     path('feedback/', TrainingFeedbackListView.as_view(), name='feedback-list'),
     path('trainers/', TrainerListView.as_view(), name='trainer-list'),
     path('trainers/<int:pk>/', TrainerDetailView.as_view(), name='trainer-detail'),
@@ -34,16 +37,14 @@ urlpatterns = [
          name='manage-recurring-trainings'),
     path('oauth/callback/', views.amocrm_callback, name='amocrm_callback'),
     path('subscriptions/create/', CreateSubscriptionView.as_view(),
-         name='subscription-create'),  # Добавлен маршрут для создания абонемента
+         name='subscription-create'),
     path('subscriptions/<int:pk>/', SubscriptionDetailView.as_view(),
          name='subscription-detail'),
-    # Добавлен маршрут для создания платежа
     path('create_payment/', CreatePaymentView.as_view(), name='create_payment'),
     path('subscriptions/create/', CreateSubscriptionView.as_view(),
          name='subscription-create'),
     path('webhook/payment/', payment_webhook, name='payment_webhook'),
 ]
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,
