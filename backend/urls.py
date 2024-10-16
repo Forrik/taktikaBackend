@@ -5,7 +5,7 @@ from .views import (
     RegisterView, LoginView, ProfileView, GymListView, GymDetailView, TrainingListView,
     SubscriptionListView, TrainingFeedbackListView, TrainerListView,
     TrainerDetailView, TrainingDetailView, TrainingEnrollView, TrainingUnenrollView, ManageRecurringTrainingsView,
-    SubscriptionDetailView, CreateSubscriptionView, CreatePaymentView, payment_webhook, TrainingConfirmView,
+    SubscriptionDetailView, CreateSubscriptionView, CreatePaymentView, payment_webhook, TrainingConfirmView, TrainerPhotoUpdateView, TrainerPhotoDeleteView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -35,6 +35,8 @@ urlpatterns = [
     path('trainers/<int:pk>/', TrainerDetailView.as_view(), name='trainer-detail'),
     path('manage-recurring-trainings/', ManageRecurringTrainingsView.as_view(),
          name='manage-recurring-trainings'),
+    path('trainers/<int:trainer_id>/photo/',
+         TrainerPhotoUpdateView.as_view(), name='trainer-photo-update'),
     path('oauth/callback/', views.amocrm_callback, name='amocrm_callback'),
     path('subscriptions/create/', CreateSubscriptionView.as_view(),
          name='subscription-create'),
@@ -44,6 +46,8 @@ urlpatterns = [
     path('subscriptions/create/', CreateSubscriptionView.as_view(),
          name='subscription-create'),
     path('webhook/payment/', payment_webhook, name='payment_webhook'),
+    path('trainers/<int:trainer_id>/photo/delete/',
+         TrainerPhotoDeleteView.as_view(), name='trainer-photo-delete'),
 ]
 
 if settings.DEBUG:

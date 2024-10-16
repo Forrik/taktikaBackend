@@ -23,8 +23,11 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
-
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 import json
+from django.core.files.base import ContentFile
+import base64
+
 logger = logging.getLogger(__name__)
 
 Configuration.account_id = settings.YOOKASSA_SHOP_ID
@@ -236,6 +239,18 @@ class GymDetailView(generics.RetrieveUpdateDestroyAPIView):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated(), IsAdminUser()]
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
 
 class TrainingListView(generics.ListCreateAPIView):
     queryset = Training.objects.all()
@@ -420,18 +435,33 @@ class TrainerListView(generics.ListAPIView):
 class TrainerDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Trainer.objects.all()
     serializer_class = TrainerSerializer
+    parser_classes = (JSONParser,)
 
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [permissions.AllowAny()]
-        elif self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [permissions.IsAuthenticated(), IsAdminUser()]
-        return [permissions.IsAuthenticated()]
-
-    def retrieve(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+
+        user_data = request.data.get('user', {})
+
+        # Обработка фото
+        if 'photo' in user_data:
+            if user_data['photo'] == 'delete_photo':
+                user_data['photo'] = None
+            elif isinstance(user_data['photo'], str) and user_data['photo'].startswith('data:image'):
+                format, imgstr = user_data['photo'].split(';base64,')
+                ext = format.split('/')[-1]
+                user_data['photo'] = ContentFile(
+                    base64.b64decode(imgstr), name=f'photo.{ext}')
+
+        # Объединяем данные пользователя с остальными данными
+        data = request.data.copy()
+        data['user'] = user_data
+
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TrainingEnrollView(APIView):
@@ -536,3 +566,53 @@ class TrainingConfirmView(APIView):
         subscription.confirm_enrollment()
 
         return Response({'success': 'Вы подтвердили запись на тренировку'}, status=status.HTTP_200_OK)
+
+
+class TrainerPhotoUpdateView(APIView):
+    def put(self, request, trainer_id):
+        try:
+            trainer = Trainer.objects.get(id=trainer_id)
+        except Trainer.DoesNotExist:
+            return Response({"error": "Trainer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Удаляем старое фото, если оно существует
+        if trainer.user.photo:
+            trainer.user.photo.delete(save=False)
+
+        # Обновляем фото
+        trainer.user.photo = request.FILES['photo']
+        trainer.user.save()
+
+        return Response({"message": "Photo updated successfully"}, status=status.HTTP_200_OK)
+
+
+class TrainerPhotoDeleteView(APIView):
+    def delete(self, request, trainer_id):
+        try:
+            trainer = Trainer.objects.get(id=trainer_id)
+        except Trainer.DoesNotExist:
+            return Response({"error": "Trainer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Удаляем фото, если оно существует
+        if trainer.user.photo:
+            trainer.user.photo.delete(save=False)
+            trainer.user.photo = None
+            trainer.user.save()
+
+        return Response({"message": "Photo deleted successfully"}, status=status.HTTP_200_OK)
+
+
+class TrainerPhotoDeleteView(APIView):
+    def delete(self, request, trainer_id):
+        try:
+            trainer = Trainer.objects.get(id=trainer_id)
+        except Trainer.DoesNotExist:
+            return Response({"error": "Trainer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Удаляем фото, если оно существует
+        if trainer.user.photo:
+            trainer.user.photo.delete(save=False)
+            trainer.user.photo = None
+            trainer.user.save()
+
+        return Response({"message": "Photo deleted successfully"}, status=status.HTTP_200_OK)

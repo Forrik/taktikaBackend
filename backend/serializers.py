@@ -27,18 +27,19 @@ class UserSerializer(serializers.ModelSerializer):
     bio = serializers.CharField(required=False, allow_blank=True)
     sports_title = serializers.CharField(
         max_length=100, required=False, allow_blank=True)
-    photo = serializers.ImageField(required=False, allow_null=True)
     password = serializers.CharField(write_only=True, required=False)
     role = serializers.ChoiceField(choices=CustomUser.ROLES, default='user')
-    level = serializers.IntegerField(
-        required=False, default=1)  # Добавленное поле
+    level = serializers.IntegerField(required=False, default=1)
     sports_category = serializers.CharField(
-        max_length=100, required=False, allow_blank=True)  # Добавленное поле
+        max_length=100, required=False, allow_blank=True)
+    photo = serializers.ImageField(
+        required=False, allow_null=True, allow_empty_file=True)
+    delete_photo = serializers.BooleanField(required=False, write_only=True)
 
     class Meta:
         model = CustomUser
         fields = ('id', 'first_name', 'last_name', 'middle_name', 'email', 'phone', 'birth_date',
-                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'password', 'role', 'level', 'sports_category')
+                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title', 'photo', 'password', 'role', 'level', 'sports_category', 'delete_photo')
 
     def validate_email(self, value):
         if self.instance and self.instance.email == value:
@@ -57,6 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
         email = validated_data.pop('email')
         password = validated_data.pop('password', None)
         role = validated_data.pop('role', 'user')
+        validated_data.pop('delete_photo', None)
 
         user = CustomUser.objects.create_user(
             username=email,
@@ -72,19 +74,79 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        email = validated_data.get('email', instance.email)
-        if email != instance.email and CustomUser.objects.filter(email=email).exists():
-            raise serializers.ValidationError(
-                {"email": "Такая почта уже используется."})
+        delete_photo = validated_data.pop('delete_photo', False)
+        photo = validated_data.pop('photo', None)
+
+        if delete_photo:
+            instance.photo.delete(save=False)
+            instance.photo = None
+        elif photo is not None:
+            instance.photo = photo
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
         instance.save()
         return instance
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         return representation
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'middle_name', 'email', 'phone', 'birth_date',
+                  'gender', 'passport_data', 'experience_years', 'bio', 'sports_title',
+                  'photo', 'level', 'sports_category']
+        extra_kwargs = {field: {'required': False} for field in fields}
+
+    def update(self, instance, validated_data):
+        # Обработка удаления фото
+        if 'photo' in validated_data and validated_data['photo'] is None:
+            instance.photo.delete(save=False)
+
+        # Проверка уникальности email
+        email = validated_data.get('email')
+        if email and email != instance.email:
+            if CustomUser.objects.filter(email=email).exists():
+                raise serializers.ValidationError(
+                    {'email': 'This email is already in use.'})
+
+        # Обновляем только предоставленные поля
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
+
+
+class TrainerSerializer(serializers.ModelSerializer):
+    user = CustomUserSerializer()
+
+    class Meta:
+        model = Trainer
+        fields = ['id', 'user', 'experience_years', 'bio']
+        extra_kwargs = {'experience_years': {
+            'required': False}, 'bio': {'required': False}}
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        user = instance.user
+
+        # Обновляем данные пользователя
+        user_serializer = CustomUserSerializer(
+            user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user_serializer.save()
+
+        # Обновляем данные тренера
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 
 class LoginSerializer(serializers.Serializer):
@@ -108,18 +170,45 @@ class GymSerializer(serializers.ModelSerializer):
         model = Gym
         fields = ['id', 'name', 'metro_station',
                   'district', 'description', 'photo']
+        extra_kwargs = {
+            'photo': {'required': False}
+        }
+
+    def update(self, instance, validated_data):
+        if 'photo' in validated_data:
+            if validated_data['photo'] == '':
+                instance.photo.delete(save=False)
+                instance.photo = None
+            else:
+                instance.photo = validated_data['photo']
+        return super().update(instance, validated_data)
 
 
 class TrainerSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    full_name = serializers.SerializerMethodField()
+    user = CustomUserSerializer()
 
     class Meta:
         model = Trainer
-        fields = ['id', 'user', 'full_name', 'experience_years', 'bio']
+        fields = ['id', 'user', 'experience_years', 'bio']
+        extra_kwargs = {'experience_years': {
+            'required': False}, 'bio': {'required': False}}
 
-    def get_full_name(self, obj):
-        return f"{obj.user.first_name} {obj.user.last_name}"
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        user = instance.user
+
+        # Обновляем данные пользователя
+        user_serializer = CustomUserSerializer(
+            user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user_serializer.save()
+
+        # Обновляем данные тренера
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 
 class TrainingSerializer(serializers.ModelSerializer):

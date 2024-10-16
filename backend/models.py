@@ -47,8 +47,7 @@ class CustomUser(AbstractUser):
     experience_years = models.IntegerField(default=0)  # Добавлено
     bio = models.TextField(blank=True)  # Добавлено
     sports_title = models.CharField(max_length=100, blank=True)  # Добавлено
-    photo = models.ImageField(
-        upload_to='user_photos/', blank=True)  # Добавлено
+    photo = models.ImageField(upload_to='user_photos/', null=True, blank=True)
     account_id = models.CharField(
         max_length=100, blank=True)  # Добавленный атрибут
     level = models.IntegerField(default=1)  # Добавленное поле
@@ -102,7 +101,7 @@ class Gym(models.Model):
     metro_station = models.CharField(max_length=100)
     district = models.CharField(max_length=100)
     description = models.TextField()
-    photo = models.ImageField(upload_to='gym_photos/', blank=True)
+    photo = models.ImageField(upload_to='gym_photos/', blank=True, null=True)
 
     def __str__(self):
         return self.name
