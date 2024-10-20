@@ -42,7 +42,7 @@ class CustomUser(AbstractUser):
     phone = models.CharField(max_length=30, blank=True)  # Добавлено
     birth_date = models.DateField(null=True, blank=True)  # Добавлено
     gender = models.CharField(max_length=10, choices=[(
-        'M', 'Male'), ('F', 'Female')], blank=True)  # Добавлено
+        'any', 'any'), ('male', 'male'), ('female', 'female')], blank=True)  # Добавлено
     passport_data = models.CharField(max_length=100, blank=True)  # Добавлено
     experience_years = models.IntegerField(default=0)  # Добавлено
     bio = models.TextField(blank=True)  # Добавлено

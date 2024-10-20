@@ -19,7 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
         max_length=30, required=False, allow_blank=True)
     birth_date = serializers.DateField(required=False, allow_null=True)
     gender = serializers.ChoiceField(choices=[(
-        'M', 'Male'), ('F', 'Female'), ('O', 'Other')], required=False, allow_blank=True)
+        'male', 'male'), ('female', 'female')], required=False, allow_blank=True)
     passport_data = serializers.CharField(
         max_length=100, required=False, allow_blank=True)
     experience_years = serializers.IntegerField(

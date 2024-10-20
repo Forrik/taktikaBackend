@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from corsheaders.defaults import default_headers
 from corsheaders.defaults import default_methods
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -15,7 +16,7 @@ SECRET_KEY = 'django-insecure-j+8c6%orh7gv$aagt6twhp2$4l$792h_g7hb@@2@1r_yo9)yq9
 DEBUG = True
 
 ALLOWED_HOSTS = ['45.8.229.240', 'localhost',
-                 '127.0.0.1',  '.ngrok-free.app', '*.ngrok-free.app']
+                 '127.0.0.1', '.ngrok-free.app', '*.ngrok-free.app', 'test001.ru', 'www.test001.ru']
 
 DATABASES = {
     'default': {
@@ -45,7 +46,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'backend',
     'sslserver'
-
 ]
 
 MIDDLEWARE = [
@@ -88,14 +88,18 @@ CORS_ALLOWED_ORIGINS = [
     'http://45.8.229.240:8080',
     'http://45.8.229.240:5173',
     'https://*.ngrok-free.app',
-
-
-
+    'http://vctaktika.ru',  # Убрали слэш в конце
+    'https://vctaktika.ru',  # Убрали слэш в конце
 ]
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.ngrok-free.app']
 CORS_ALLOW_ALL_ORIGINS = True  # Только для отладки!
-CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app', 'http://*.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.app',
+    'http://*.ngrok-free.app',
+    'http://vctaktika.ru',  # Убрали слэш в конце
+    'https://vctaktika.ru',
+    'https://45.8.229.240'  # Убрали слэш в конце
+]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 SECURE_SSL_REDIRECT = False
@@ -106,10 +110,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = list(default_methods)
 CORS_ALLOW_HEADERS = list(default_headers) + ['X-CSRFToken']
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173',
-                        'https://*.ngrok-free.app',
-                        'http://*.ngrok-free.app',
-                        ]  # Add your frontend URL here
+
 CSRF_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS
 CSRF_COOKIE_HTTPONLY = False  # False allows JavaScript to access the cookie
 SESSION_COOKIE_SAMESITE = 'Lax'  # or 'None' if you're using 'Strict' CORS
@@ -120,6 +121,8 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 TEMPLATES = [
     {
@@ -169,12 +172,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
-
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
